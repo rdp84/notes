@@ -1,0 +1,33 @@
+Printer Notes
+-------------
+
+run lpinfo -v to see list of available backends and printers. This should output something like:
+
+[bobby@localhost ~]$ lpinfo -v
+file cups-brf:/
+network ipps
+network lpd
+network beh
+network https
+network http
+direct hp
+network socket
+network ipp
+network smb
+direct hpfax
+network dnssd://HP%20ENVY%20Photo%206200%20series%20%5B327AEF%5D._ipp._tcp.local/?uuid=4b8adc85-3912-5599-7edb-138fb975b574
+network socket://192.168.0.10:9100
+
+Then to add printer use lpadmin command:
+
+[bobby@localhost ~]$ lpadmin -p HP_Envy_Photo_6234 -E -v dnssd://HP%20ENVY%20Photo%206200%20series%20%5B327AEF%5D._ipp._tcp.local/?uuid=4b8adc85-3912-5599-7edb-138fb975b574 -L 'Home Office' -m everywhere
+
+-p name given to the printer
+-v printer URI obtained from the lpinfo -v
+-L location of printer
+-E comes after -p and enables and accept jobs on the printer (not sure if I need this)
+-m everywhere specifies printer is compatible with IPP Everywhere (2009+ printers nearly all are)
+
+lpstat -p -d will show connected printers
+
+lpoptions -d HP_Envy_Photo_6234 will display current printer options and defaults. Can also set options with this command

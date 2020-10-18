@@ -1,0 +1,3 @@
+# Notes
+
+Contains rough notes/howto's on things I've been doing and may do again in the future. Adding here to help with remembering how to do these things in the future...

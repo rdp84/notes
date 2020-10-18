@@ -1,0 +1,48 @@
+
+lvs - display information about logical volumes
+pvs - display information about physical volumes
+vgs - display information about volume groups
+fdisk -l - displays information on partition table entries
+
+df -h - gets file system disk space usage
+
+umount -v /home - unmounts home with verbose output
+
+e2fsck -ff /dev/fedora/home - forces filesyetem check (this might be /dev/mapper/fedora-home) 
+
+resize2fs /dev/fedora/home xG - reduce size of filesystem to x Gigabytes (again could possibly be /dev/mapper...)
+
+lvreduce -L -xG /dev/fedora/home - reduce size of logical volume to x Gigabytes
+
+resize2fs /dev/fedora/home - re-size filesyetm back
+
+mount /dev/fedora/home /home - mount filesystem back
+
+lvdisplay fedora to check volume
+
+on shrinking volumes, the physical volume ends up being fragmented. You can check the status of the physical extents:
+
+pvs -v --segments /dev/device
+
+from the output of this you can then start to move segments that make up a logical volume into the free space with the following:
+
+pvmove --alloc anywhere /dev/sda5:yyyy-end - this will move the volume into the best fit free space.
+pvmove --alloc anywhere /dev/sda5:yyyy-end newStart-newEnd - this will move the volume to newStart, ending at newEnd.
+Need to ensure that the size of the extents (newEnd - newStart) is greater than the size of the volume (end-yyyy) in this case.
+
+Now that the volume has been defragmented (all the free extents are at the end of the volume) can now shrink it down:
+
+pvresize --setphysicalvolumesize 80G /dev/sda2
+
+To shrink the size of the partition that the volume sits on and make the newly created free space available to be used by
+us parted
+
+parted - starts a command interface
+p - print current state of partitions
+resizepart - resize a partition, i.e., shrink it to desired size
+mkpart - make a partition
+
+once you have made a partition then need to make the filesystem on that partition with the command:
+mkfs.* - diferent appendix on command depending on what filesystem wish to create. Use tab completion to see a load.
+
+

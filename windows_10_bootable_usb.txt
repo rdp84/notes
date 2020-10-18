@@ -1,0 +1,20 @@
+Create a bootable Windows 10 USB
+ -------------------------------
+
+    - previously creating bootable usb was pretty simple, formatting USB
+      to FAT32.
+    - problem now is that Windows 10 ISO contains a install.wim which
+      is greater than 4GB. FAT32 doesn't support files > 4GB.
+    - to work around this need to create two partitions on USB.
+        - one partition will be formatted to FAT32 and hold all files
+          required to start boot process
+        - second partition will be formatted to NTFS and hold all files
+          require to run installation
+        - FAT32 partition 2GB in size. NTFS partition at least > 6GB.
+        - extract ISO image
+        - copy everything except the sources directory to FAT32 partition
+        - copy sources directory to NTFS partition
+        - on the FAT32 partition create a sources directory. Move
+          sources/boot.wim from NTFS partition to sources on FAT32.
+    - USB should now boot off FAT32 partition and then hand control to NTFS
+      partition to complete installation.
