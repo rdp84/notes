@@ -45,4 +45,21 @@ mkpart - make a partition
 once you have made a partition then need to make the filesystem on that partition with the command:
 mkfs.* - diferent appendix on command depending on what filesystem wish to create. Use tab completion to see a load.
 
+fdisk /dev/sdb - manipulate partition table of disk /dev/sdb. When pluggin in USB thumb drive run dmesg to see where it is loaded
 
+fdisk starts an interface. Run 'm' to see a full list of commands. Some useful ones:
+
+F - list free space on unpartitioned space left on device
+d - delete a partition
+n - create a new partition
+t - change the type of partition (this doesn't format the partition with the filesystem, just flags as to what filesystem will be installed on it)
+  - use 'L' to see a full liting of available types
+a - toggle whether the partion is a boot partition
+w - write out changes and exit. This is important to save changes made since fdisk doesn't make them immediately.
+
+Once partitions have been setup need to format it. Use mkfs... commands to do this:
+
+mkfs.fat -F 32 /dev/sdb1 (/dev/sdb1 is the partition)
+sudo mkfs.ext4 /dev/sdb2
+
+Can also possibly use parted to do similar things. Unsure as to whether you can resize a partition with fdisk...
