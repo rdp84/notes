@@ -82,3 +82,27 @@ Important things to remember from above:
     Making use of `;` means we can write statements on
     the one line
 
+The [[ ]] construct is the more versatile Bash version of
+[ ]. It is known as the extended test command and using
+it can prevent many logic errors in scripts. It is
+possbile to use &&, ||, < and > operators, which would
+give an error if used in the [ ] construct.
+
+    grep -irs '^bob\+y' /etc
+    GREP_EXIT_STATUS=$?
+
+    ls -a
+    LS_EXIT_STATUS=$?
+
+    if [[ $GREP_EXIT_STATUS -eq 0 && \
+          $LS_EXIT_STATUS -eq 0 ]]; then
+        echo "grep and ls returned zero"
+    elif [[ $GREP_EXIT_STATUS -eq 1 && \
+            $LS_EXIT_STATUS -eq 0 ]]; then
+        echo "grep returned one, ls returned zero"
+    elif [[ $GREP_EXIT_STATUS -eq 2 && \
+            $LS_EXIT_STATUS -eq 0 ]]; then
+         echo "grep returned two, ls returned zero"
+    else
+        echo "grep returned: $GREP_EXIT_STATUS"
+    fi
