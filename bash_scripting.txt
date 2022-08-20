@@ -1,0 +1,108 @@
+Bash scripting
+--------------
+
+Best practice to declare on first line of script which interpreter to use. Generally I use bash so we provide the
+path to the bash binary, preceded by the shebang character
+sequence (#!) like so:
+
+    #!/bin/bash
+
+To declare a variable simply provide an identifier
+followed by the equals character:
+
+    my_variable=3
+    another_variable="a string"
+
+To then refer back to that variable, use the identifier
+prefixed with the dollar character:
+
+    echo "my_variable=$my_variable"
+    echo "another_variable=$another_variable"
+
+Use the hash character to add a comment:
+
+    # It is always worth commenting things for later use
+
+You can save the output of a command into a variable with
+something like:
+
+    OUTPUT=$(ls -l /home)
+    echo "OUTPUT=$OUTPUT"
+
+The exit status of the last run command is stored in the
+variable '$?'. Remember that every command returns an
+exit status so the value of this variable will be
+overriden by the exit status of future commands. Therefore
+if you are interested in the exit status of a particular
+command then it is best to save it in another variable:
+
+    # ls exits with 2 since non-existent dir
+    ls -l /hOme/
+    # save the exit status of the previous ls-command
+    ls_exit_status=$?
+    # prints 0 since previous assignment was successful
+    echo "\$?=$?"
+    # prints 2 since that is what ls exited with
+    echo "ls_exit_status=$ls_exit_status"
+
+The semi-colon can be used as a command separator - it is
+basically like pressing the ENTER key to execute a
+command:
+
+    # This will first execute ls -a followed by ls -l
+    # It has all been written on the one line though
+    ls -a; ls -l
+
+This becomes useful when we want to write if-else
+statements:
+
+    grep -irs '^bob\+y' /etc
+    GREP_EXIT_STATUS=$?
+
+    if [ $GREP_EXIT_STATUS -eq 0 ]; then
+        echo "grep returned zero"
+    elif [ $GREP_EXIT_STATUS -eq 1 ]; then
+         echo "grep returned one"
+    elif [ $GREP_EXIT_STATUS -eq 2 ]; then
+         echo "grep returned two"
+    else
+        echo "grep returned: $GREP_EXIT_STATUS"
+    fi
+
+Important things to remember from above:
+
+    [ EXPRESSION ] is an alternative to test EXPRESSION
+
+    The whitespace after `[` and before `]` is important -
+    you get a syntax error if it is not present
+
+    `fi` is also important, missing that produces a
+    syntax error.
+
+    Making use of `;` means we can write statements on
+    the one line
+
+The [[ ]] construct is the more versatile Bash version of
+[ ]. It is known as the extended test command and using
+it can prevent many logic errors in scripts. It is
+possbile to use &&, ||, < and > operators, which would
+give an error if used in the [ ] construct.
+
+    grep -irs '^bob\+y' /etc
+    GREP_EXIT_STATUS=$?
+
+    ls -a
+    LS_EXIT_STATUS=$?
+
+    if [[ $GREP_EXIT_STATUS -eq 0 && \
+          $LS_EXIT_STATUS -eq 0 ]]; then
+        echo "grep and ls returned zero"
+    elif [[ $GREP_EXIT_STATUS -eq 1 && \
+            $LS_EXIT_STATUS -eq 0 ]]; then
+        echo "grep returned one, ls returned zero"
+    elif [[ $GREP_EXIT_STATUS -eq 2 && \
+            $LS_EXIT_STATUS -eq 0 ]]; then
+         echo "grep returned two, ls returned zero"
+    else
+        echo "grep returned: $GREP_EXIT_STATUS"
+    fi
