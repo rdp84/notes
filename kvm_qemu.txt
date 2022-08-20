@@ -60,6 +60,10 @@ looks like it is only needed for older OS
 
 Mounting SMB Share
 ------------------
+Note - you need to have smb installed on the host. Fedora have a handy guide:
+    https://fedoramagazine.org/fedora-32-simple-local-file-sharing-with-samba/
+
+
 The line in the boot command:
     -netdev user,id=network0,smb=/home/bobby/Computing/Software/SMB/share \
 
@@ -73,7 +77,7 @@ Fedora 7 has version 1.0 of the smb client so you need to tell the smb server to
 from this version; servers now don't allow it by default for security reasons. Can do this by adding
 the following to the config file under the [global] section:
 
-    client min protocol = NT1    
+    min protocol = NT1
 
 On the guest can then mount the share (as root) with something like:
 
