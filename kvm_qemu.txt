@@ -1,0 +1,81 @@
+qcow2 disk
+----------
+First thing to do is create a qcow2 disk. Can do this with:
+
+    qemu-img create -f qcow2 fedora_7.qcow2 20G
+
+Snapshots in QEMU are images that refer to an original image using redirect-on-write
+to avoid changing the original image. If our original image is fedora_7.qcow2
+then we need to create a new qcow2 file using the -b flag to indicate a backing file;
+any changes to the snapshot file will not be reflected in fedora_7.qcow2:
+
+    qemu-img create -f qcow2 -b fedora_7.qcow2 -F qcow2 snapshot.qcow2
+
+If you run
+
+    qemu-img info snapshot.qcow2
+
+then you will see it is listing its backing file as fedora_7.qcow2
+
+A snapshot image cannot be returned to its original state once it is modified. Instead
+you need to delete the file and create another snapshot and start using it.
+
+You will need to boot the virtual machine using this snapshot file. It might be you make
+changes in this snapshot file that you would like to be saved into the
+original. This is also possible by performing a rebase and then commiting:
+
+    qemu-img rebase -b fedora_7.qcow2 -F qcow2 snapshot.qcow2
+    qemu-img commit snapshot.qcow2
+
+Installing OS
+-------------
+First thing to do is to install an OS. To boot a qemu system from a cdrom can do the following:
+
+    qemu-system-x86_64 -enable-kvm \
+    -m 2048 \
+    -nic user,model=virtio \
+    -hda fedora_7.qcow2 \
+    -cdrom ../../ISO/F-7-x86_64-DVD.iso \ # This is the path to the ISO of the OS we want to boot
+    -display sdl
+
+This should boot the OS and product a window where you can proceed through the installer, saving
+the changes to the attached qcow2 disk.
+
+Booting
+-------
+Once installed, you'll want to boot back into it:
+
+    qemu-system-x86_64 --enable-kvm \
+                   -m 2048 \
+                   -hda fedora_7.qcow2 \
+                   -netdev user,id=network0,smb=/home/bobby/Computing/Software/SMB/share \
+                   -device e1000,netdev=network0,mac=52:54:00:12:34:56 \
+                   -display sdl \
+                   -vga cirrus
+
+the option
+    -vga cirrus
+
+looks like it is only needed for older OS
+
+Mounting SMB Share
+------------------
+The line in the boot command:
+    -netdev user,id=network0,smb=/home/bobby/Computing/Software/SMB/share \
+
+adds a network device and makes a smb share available to the guest on //10.0.2.4/qemu.
+This makes sharing of files between the host and guest much easier - essentially it becomes a
+shared folder between the two.
+
+The configuration for the smb share will be stored in /tmp/qmeu-smb... directory; this can be useful
+if you want to add some different options to the smb share for when it is mounted in the guest.
+Fedora 7 has version 1.0 of the smb client so you need to tell the smb server to accept connections
+from this version; servers now don't allow it by default for security reasons. Can do this by adding
+the following to the config file under the [global] section:
+
+    client min protocol = NT1    
+
+On the guest can then mount the share (as root) with something like:
+
+    mount -t cifs //10.0.2.4/qemu share/ -o user=bobby,vers=1.0 --verbose
+
