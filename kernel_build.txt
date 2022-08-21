@@ -1,0 +1,105 @@
+Fedora 7 & 2.6.24 Kernel
+------------------------
+I've been building the 2.6.24 kernel on Fedora 7. To do this I've done the following:
+
+    # All the following is run as root
+    
+    1. Create a virtual machine using kvm/qemu
+    2. On the new image need some software. To install run:
+
+        # Not sure how many of these are needed, a bit trial and error
+        yum install glibc glibc-common glibc-headers glibc-devel
+        yum install gcc make ctags openssl-devel
+        yum install git libncurses5-dev exuberant-ctags libssl-dev bison flex libelf-dev
+
+    3. Download the 2.6.24 version of the kernel from https://mirrors.edge.kernel.org/pub/linux/kernel/
+    4. Transfer to the guest using Samba file share and extract to /usr/src/kernels/linux-2.6.24
+    5. Create a configuration, which is stored in the top directory of the source tree. It is possible
+       to create one from scratch, a default one (which may not have all the options you need) or can
+       just duplicate the existing configuration being used by Fedora. Duplicating is probably easiest
+       for now:
+
+       cd /usr/src/kernels/linux-2.6.24
+       cp /boot/config-`uname -r`* .config
+
+    6. To build the kernel it is as simple as running:
+
+       cd /usr/src/kernels/linux-2.6.24
+       make
+
+       Running it like this can take some time. On multiprocessor machines can pass the -j option
+       to build it in a multithreaded way. Good options are 2 or 4:
+
+       make -j2
+
+     7. Once built you then need to install. Can manually update the GRUB configuration file or if
+        the  distribution has an installkernel script can run that. Fedora 7 has such a script located
+        in /sbin/installkernel so we can run:
+
+        make modules_install install
+
+     8. To run the newly built kernel will usually need to reboot into it. On Fedora 7, reboot and from
+        the GRUB bootloader select to boot the 2.6.24 kernel.
+
+Loadable Modules
+----------------
+When developing drivers then you need the kernel tree on your system so need to follow the above steps
+to do this.
+
+A Makefile can be as simple as:
+
+    obj-m := hello.o
+
+The kernel build system will handle the rest and the assginment above states that there is one module
+to be built from hello.o and the resulting module will be called hello.ko.
+
+If you have a module called module.ko that is generated from two source files (file1.c and file2.c)
+then you'd use:
+
+    obj-m := module.o
+    module-objs := file1.o file2.o
+
+For a Makefile like the above to work, it must be ivoked within the context of the larger kernel build
+system. If the kernel source tree is located in /usr/src/kernels/linux-2.6.24 you'd use:
+
+    make -C /usr/src/kernels/linux-2.6.24 M=`pwd` modules
+
+This command starts by changing its directory to the one provided with the -C option and finding
+the top-level kernel Makefile. The M option then causes it to jump back to the module source directory
+before trying to build the modules target. This target, in turn, refers to the list of modules found
+in the obj-m variable, which is set to module.o in the example above.
+
+Entering above command can be tiresome so developers have developed a Makefile idiom to make it easier
+to build modules outside of the source tree with something like:
+
+    # Comment/uncomment the following line to disable/enable debugging
+    DEBUG = y
+
+    #Add your debugging flag (or not) to CFLAGS
+    ifeq ($(DEBUG),y)
+      DEBFLAGS = -O -g -DMY_SCULL_DEBUG # "-O" is needed to expand inlines
+    else
+      DEBFLAGS = -O2
+    endif
+
+    EXTRA_CFLAGS += $(DEBFLAGS)
+    
+    # If KERNELRELEASE is defined, we've been invoked from the
+    # kernel build sysatem and can use its language
+    ifneq ($(KERNELRELEASE),)
+	    obj-m := my_scull.o
+
+    # Otherwise we were called directly from the command
+    # line; invoke the kernel build system
+    else
+	    KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+	    PWD := $(shell pwd)
+
+    default:
+	    $(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+    endif
+
+    .PHONY: clean
+    clean:
+	    rm -rf *.o *~ .*.cmd *.ko *.mod.c .tmp_versions Module.symvers
+ 
