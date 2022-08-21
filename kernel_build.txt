@@ -2,7 +2,8 @@ Fedora 7 & 2.6.24 Kernel
 ------------------------
 I've been building the 2.6.24 kernel on Fedora 7. To do this I've done the following:
 
-    # All the following is run as root
+    # The majority of this should be run as a normal user. The only steps that should require
+    # superuser privileges is with the installation of the kernel.
     
     1. Create a virtual machine using kvm/qemu
     2. On the new image need some software. To install run:
