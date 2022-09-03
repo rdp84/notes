@@ -1,0 +1,332 @@
+AWK
+---
+
+Basic form is:
+
+    awk 'program' intput-file1 input-file2 ...
+
+This format is useful for running short to medium sized programs. Abything bigger then:
+
+    awk -f source-file input-file1 input-file2
+
+source-file would then contain something like:
+
+    BEGIN { print "Don't panic!" }
+
+It is also possible to make them executable, using the '#!' script mechanism:
+
+    #! /bin/awk -f
+
+    BEGIN { print "Don't panic!" }
+
+and then:
+    chmod +x source-file
+    ./source-file
+
+They support comments with the '#' character:
+
+    # This will print a nice friendly message
+    BEGIN { print "Don't panic!" }
+
+Shell Quoting
+-------------
+
+When entering the program on the awk command line, the entire program is enclosed in single quotes.
+The shell protects everything between single quotes. Remember that you have to quote special characters
+(',@) on the command line with the backslash, the shell removes the backslash and passes the quoted
+character on to the command. Inside single quotes this doesn't happen and the shell passes it on
+verbatim to the command.
+
+Double quotes protect most things between opening and closing quotes. The shell does at least variable
+and command subsitution on the quoted text, which means certain characters must be escaped ($, ', ", \)
+
+    awk "BEGIN { print \"Don't panic\" }"
+
+    # Some ugly shell quoting tricks, all printing "Here is a  single quote <'>"
+    awk 'BEGIN { print "Here is a single quote <'"'"'>" }'
+    awk 'BEGIN { print "Here is a single quote <'\''>" }'
+    awk "BEGIN { print \"Here is a single quote <'>\" }"
+    awk 'BEGIN { print "Here is a single quote <\47>" }' # probably cleanest way is using the octal value of the character
+
+If you really need to use single and double quotes in the program it is probably best to move it to a separate file
+where the shell won't be part of the picture and you can say what you mean.
+
+
+Simple Examples
+---------------
+
+    awk '/li/ { print $0 }' mail-list.txt
+
+    /li/ - indicate that li is the pattern to search for, this type of pattern is a reg ex
+    print $0 - print the current line, could also have written print. This is known as the action
+
+    Result of the above is to print all lines that contain li. The pattern and action make up a rule.
+
+In an awk rule, either the pattern or action can be omitted but not both. If pattern is omitted, action is performed
+on every line. If action is omitted, the default is to print all lines that match the pattern. Thus above could
+be written as:
+
+    awk '/li/'
+
+Note that
+
+    awk '/li/ { }'
+
+would mean an empty action so nothing would be printed
+
+    # Prints every line greater than 80 characters. This rule has a relational expression as its pattern
+    # and has no action - therefore it uses the default action
+    awk 'length($0) > 80' mail_list.txt
+
+    # Print the length of the longest input line. The code assoicated with END executes after all
+    # input has been read
+    awk '{ if (length($0) > 0) max = length($0) } END { print max }' mail_list.txt
+
+    # Another print length of the longest line. It differs slightly from above: input line is processed
+    # by the expand utility to convert tabs to spaces
+    expand mail_list.txt | awk '{ if (x < length($0)) x = length($0) }
+                                END { print "maximum line length " x }'
+
+    # Print every line that has at least one field. This is an easy way of deleting blank lines from a file
+    awk 'NF > 0' inventory_shipped.txt
+
+    # Print seven random numbers from 0 to 100, inclusive:
+    awk 'BEGIN { for (i = 1; i <= 7; i++) print int(101 * rand()) }'
+
+    # Print the total number of bytes used by inventory_shipped.txt
+    ls -l inventory_shipped.txt | awk '{ x = $5 } END { print "total bytes: " x }'
+
+    # Print the total number of kilo-bytes used by mail_list.txt
+    ls -l mail_list.txt | awk '{ x = $5 } END { print "total K-bytes: " x / 1024 }'
+
+    # Print a sorted list of the login names of all users
+    awk -F: '{ print $1 }' /etc/passwd | sort
+
+    # Count the lines in a file
+    awk 'END { print NR }' ls_dash_l.txt
+
+    # Print the even numbered lines
+    awk 'NR % 2 == 0' inventory_shipped.txt
+
+    # Print the odd numbered lines with an if
+    awk '{ if (NR % 2 == 1) print }' inventory_shipped.txt
+
+Two Rules
+---------
+
+awk reads the input files one line at a time. For each line, awk tries the patterns of each rule. If
+several patterns match, then several actions execute in the order in which they appear in the awk program.
+If no patterns match, then no actions run. This continues until the program reaches the end of the file.
+
+    # Prints every line thats contains the string '12' or '21'. If a line contains both, it is printed twice. 
+    awk '/12/ { print $0 }
+         /21/ { print $0 }' mail_list.txt inventory_shipped.txt
+
+Each rule's action is enclosed in its own pair of braces.
+
+More complex examples
+---------------------
+
+    # Prints the toal number of bytes in all the files that were last modified in November
+    awk '$6 == "Nov" { sum += $5 } END { print "sum: " sum}' ls_dash_l.txt
+
+
+Regular expressions
+--------------------
+
+As we've seen, a regular expression can be used as a pattern by enclosing slashes. Then the regular
+expression is tested against the entire text of each record. Normally it only needs to match some
+part of text in order to succeed.
+
+    # Prints the second field of each record where the string li appears anywhere in the record
+    awk '/li/ { print $2 }' mail_list.txt
+
+Regular expression can also be used in matching expressions. These expression allow you to specify
+the string to match against; it need not be the entire current input record.
+
+The two operators '~' and '!~' perform comparisons and expressions using these operators can be used
+as patterns, or in if, while, for and do statements.
+
+    # Print all input records with the uppercase J somewhere in the first field
+    # A few ways of doing it
+    awk '$1 ~ /J/ { print $0 }' inventory_shipped.txt
+    awk '$1 ~ /J/' inventory_shipped.txt
+    awk '{ if ($1 ~ /J/) print $0 }' inventory_shipped.txt
+
+    # Print all records whose first field does not contain J
+    awk '$1 !~ /J/ { print $0 }'
+
+Some characters cannot be included literally in string constant or regular expression constants. Instead
+they should be represented with escape sequences, which are character sequences beginning with a backslash.
+
+    # For the quotes to appear in the output need to escape with \"
+    awk 'BEGIN { print "He said \"hi!\" to her."}'
+
+Support the standard ones - \\, \n, \t. \nnn will match the octal ASCII value (nnn). \xhh matches the hex.
+
+Support for the standard regular expression operators - ^, $, ., [...], [^...], |, (...), *, +, ?, {n}, {n,}, {n,m}
+
+    # Matches J or j at the beggining of a string
+    awk '$1 ~ /^[Jj]/ { print }' inventory_shipped.txt
+
+    # Matches a record that ends with A or a
+    awk '/[Aa]$/ { print }' mail_list.txt
+
+    # Matches a record that does not end with A or a (complemented bracket expression)
+    awk '/[^Aa]$/ { print }' mail_list.txt
+
+    # Matches a record that has a 6..0 dialling code, e.g., 6480 but not 6699
+    awk '$2 ~ /6..0/' { print }' mail_list.txt
+
+    # Matches a record that ends in F or R or r
+    awk '/F|[Rr]$/ { print }' mail_list.txt
+
+    # Matches a record that has a yahoo.com or hotmail.com email
+    awk '/@(yahoo|hotmail)\.com/ { print }' mail_list.txt
+
+    # Matches all records whose contact number begins with zero or more 5's,
+    # then a hyphen and then a 2
+    awk '$2 ~ /^5*-2+/ { print }' mail_list.txt
+
+A bracket expression [...] matches any character among those listed between the
+opening and closing square brackets. It is possible to use range expressions:
+
+    [0-9] - is equivalent to [0123456789]
+    [a-dE-H] - is equivalent to [abcdEFGH]
+
+A character class is a special notation for describing lists of characters that have a specific attribute.
+They are only valid inside the brackets of a bracket expression and are denoted by [:, keyword for the class, :]
+
+    [:alnum:] - Alphanumeric characters
+    [:alpha:] - Alphabet characters
+    [:digit:] - Numeric characters
+    [:space:] - Space characters
+
+And to use them:
+
+    # Print out all records whose name is made up of alphabet characters and the hyphen
+    awk '$1 ~ /^[[:alpha:]-]+$/ { print }' mail_list.txt
+
+If looking for case insensitivity on matches then easiest way it to use a bracket expression containing
+both characters, e.g.,
+
+    awk '$1 ~ /^[Jj]/ { print }' inventory_shipped.txt
+
+This can become cumbersome if you have to use it often. It is possible to use the built in string
+functions to convert it to single case using tolower() or toupper()
+
+    awk 'toupper($1) ~ /^J/ { print }' inventory_shipped.txt
+
+Reading Input Files
+-------------------
+
+awk reads all input either from stdin or from files. If specifying input files, it reads them in order,
+processing all data from one before going on to the next.
+
+The input is read in units called records, and processed by the rules of your program one record at a
+time. By default, each record is one line. Each record is then split into chunks called fields. This
+makes it more convenient for programs to works on the parts of a record.
+
+Predefined variables:
+FNR - keeps track of the number of records that have been read so far from the current input file.
+NR  - records the total number of input records read so far from all data files.
+
+Records are separated by a character called the record separator. By default, this is the newline character.
+It is possible though to change this; simply assign a character to the predefined variable RS
+
+    # Copies the input with each "u" changed to a newline
+    awk 'BEGIN { RS = "U" }; { print $0 }' mail_list.txt
+
+    # Can also set RS via command line
+    awk '{ print $0 }' RS="u" mail_list.txt
+
+Using the character "u" will produce unusual results; moral is to know your data and where to split.
+
+By default fields are separated by whitespace, like words in a line. The purpose of fields is to make it
+more convenient for you to refer to these pieces of the record, leading to simple but powerful programs.
+You use the dollar sign ($) to refer to a field, followed by the number of the field you want.
+
+    This seems like a pretty nice example.
+
+    $0 = This seems like a pretty nice example.
+    $1 = This
+    $2 = seems
+    $3 = like
+    ...
+    $7 = example.
+    $8 = "" (empty string)
+
+NF is a predefined variable whose value is the number of fields in the current record. awk
+automatically updates this value each time it reads a record.
+
+    # Looks for li in the entire record and prints the first and last field for each matching input record
+    awk '/li/ { print $1, $NF }' mail_list.txt
+
+The contents of a field can be changed. When a field is changed, $0 changes to reflect the altered field.
+
+    # Prints a copy of the input file, with 10 subtracted from the second field of each line.
+    awk '{ $2 = $2 - 10; peint $0 }' inventory_shipped.txt
+
+    # Calculate the total number of parcels shipped for a particular month by adding a new field
+    # This will increment NF
+    awk '{ $6 = $5 + $4 + $3 + $2 + $1; print $6 }' inventory_shipped.txt
+
+The field separator, which is either a single character or a regular epxression, controls the way awk
+splits an input record into fields.
+
+It is represented by the predefined variable FS.
+
+Right time to change this is at the beginning of execution before any input has been processed, so that
+the very first record is read with the proper separator. To do this use the BEGIN pattern:
+
+    # Extracts and prints 29 Oak St.
+    echo 'John Q. Smith, 29 Oak St., Walamazoo, MI 42139' | awk 'BEGIN { FS = "," }; { print $2 }'
+
+    # Same as above but set FS via comand line option -F
+    echo 'John Q. Smith, 29 Oak St., Walamazoo, MI 42139' | awk -F, '{ print $2 }'
+
+    # Make whole input line a single field - $1 equals $0 in this case
+    awk -F'\n' '{ print $1 }' inventory_shipped.txt
+
+    # Fields are separated by runs of whitespace, with leading and trailing whitespace ignored.
+    # This is the default
+    awk 'BEGIN { FS = " " }; { print }'
+
+    # Fiuelds are separated by occurences of characters that match regexp. Leading and trailing
+    # matches delimit empty fields.
+    awk 'BEGIN { FS = /,/ }; { print }' inventory_shipped.txt
+
+    # Each character in the record becomes a separate field
+    awk 'BEGIN { FS = "" }; { print }' inventory_shipped.txt
+
+The print statement
+-------------------
+The print statement is used to produce output with simple, standardized formatting. Can specify constants
+(strings or numbers), fields of the current record ($1) or variables to print, in a list separated by commas.
+They are output, separated by single spaces, followed by a newline.
+
+    awk 'BEGIN { print "line one\nline two\nline three"}'
+    awk '{ print $1, $2 }' inventory_shipped.txt
+
+    # Common mistake is to miss out the comma, causing strings to be concatanated with no space
+    awk '{ print $1 $2}' inventory_shipped.txt
+
+    # Attempt to line up columns with spaces. This is difficult which is why printf has been invented
+    awk 'BEGIN {print "Months Crates"
+                print "------ ------"}
+               {print $1, "     ", $2}'
+
+By default a a space is used to separate items in the output. This doesn't need to be the case, any
+string of characters can be used as the output field separator (OFS).
+
+Output from an entire print statement is called an output record. Each print statement outputs one
+record and then a string called the output record separator (ORS) - defaults to '\n'.
+
+Usually assign new values to OFS and ORS in BEGIN.
+
+    awk 'BEGIN { OFS = ";"; ORS = "\n\n" }
+               { print $1, $2 }' mail_list.txt
+
+For more precise control can use printf
+
+    awk '{ printf "%s: %s\n", $1, $2}' mail_list.txt
