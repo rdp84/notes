@@ -1,0 +1,42 @@
+Jails
+-----
+
+To get a rootfs, probably easiest to export a Docker container:
+
+    > docker pull fedora
+    > docker run --rm -it fedora /bin/bash
+
+    # In another terminal
+
+    > docker export <container_id> -o fedora.tar.gz
+    > tar -C fedora_rootfs -xvf fedora.tar.gz
+
+Now have a full rootfs to use with chroot
+
+    > sudo chroot fedora_rootfs/ /bin/bash
+
+Jails can be useful for testing out changes. As an example use GNU Coreutils
+
+    # Download a version from https://ftp.gnu.org/gnu/coreutils/
+    > mkdir coreutils
+    > tar -C coreutils -xvf <coreutils.xx.yy.tar.gz>
+    > cd coreutils
+
+    # In src/ directory make a simple change to a util such as rm, e.g.,
+    # by default set it to always ask if you wish to remove a file
+
+    > ./configure --prefix=<full path to rootfs>
+    > make
+    > sudo make install
+
+    # Above should install the modified version into the rootfs.
+    # Now when you run the jail should see the change
+
+    > sudo chroot fedora_rootfs/ /bin/bash
+    > touch /home/foo.txt
+    > rm /home/foo.txt    # This should prompt for confirmation of removal
+
+It is possible to setup your own rootfs to use as a jail, although takes a bit of time.
+Below explains it pretty well:
+
+    https://www.howtogeek.com/441534/how-to-use-the-chroot-command-on-linux/
