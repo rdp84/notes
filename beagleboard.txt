@@ -1,0 +1,102 @@
+Beagleboard Black
+-----------------
+
+Power On:
+    - need a power source. Can either:
+        1. use a power adapter and plug in to the 5V poower jack on the board
+        2. use a USB-to-mini-USB cable; plug USB into external machine and mini-USB
+           into mini-USB client connector on the board
+    - press the power button on the board
+
+Flashing
+    - the first time I powered on nothing happened. Think this was because there was no
+      OS installed on the embedded multi-media card (eMMC). The size of the eMMC is 4GB.
+    - so need to download the latest Debian image from https://beagleboard.org/latest-images
+    - flash the image onto the micro-SD card. I have downloaded balenaEtcher under
+      ~/Computing/Software/Etcher. Run this from command line and it'll open a GUI. Think it
+       should be possible to flash the card without having to use this, would be a good exercise.
+    - Insert SD card into the powered-down board, hold down the Boot button and apply power.
+    - can now write this image to the eMMC so that it automatically flashes the eMMC on power up:
+        - open /boot/uEnv.txt, sudo nano /boot/uEnv.txt
+        - change:
+          ##enable BBB: eMMC Flasher:
+          #cmdline=init=/opt/scripts/tools/eMMC/init-eMMC-flasher-v3.sh
+
+          to be:
+          ##enable BBB: eMMC Flasher:
+          cmdline=init=/opt/scripts/tools/eMMC/init-eMMC-flasher-v3.sh
+
+          Save the file, reboot the board by pressing the Reset button and then hold Boot button
+          until the four LEDs light up. As the image is being written to the eMMC the LEDs will
+          light in a bouncing pattern. Takes about 10 minutes, once complete all LEDs will turn
+          off. At this point remove the SD card and press the power button.
+
+Communicating with the Board
+    - with USB-to-mini-USB cable plugged in and the board powered on, the board will connect to
+      the desktop computer in USB client mode.
+    - it will use Internet-over-USB, using the Linux USB Ethernet/RNDIS Gadget device and is
+      probably the most convenient way of getting started.
+    - in Fedora need to setup Network Address Translation (NAT) such that traffic coming from the board
+      is forwarded through the desktop machine to the internet correctly.
+    - can use iptables on the desktop for this:
+
+        # Use NAT masquerading to forward out all packets on the wlp2s0 (desktop) interface
+        sudo iptables --table nat --append POSTROUTING --out-interface wlp2s0 -j MASQUERADE
+
+        # Forward all packets from the enp57s0u2u2u2i3 (Internet-over-USB, 192.168.6.1) interface
+        sudo iptables --append FORWARD --in-interface enp57s0u2u2u2i3 -j ACCEPT
+
+    - Use the following to turn on IP forwarding
+        sudo sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
+
+    - Now Fedora also makes use of a firewall. People say to turn this off if you are using iptables.
+      However it is possible to not have to do this:
+
+        # Allow packets to freely forward between interfaces in the FedoraWorkstation zone
+        sudo firewall-cmd --zone=FedoraWorkstation --add-forward
+        
+        # Enable IP Address Masquerading. Replaces private IP address of the board with the outgoing
+        # interface
+        sudo firewall-cmd --zone=FedoraWorkstation --add-masquerade
+
+        # Above will configuration only affects runtime, they won't survive reboot. To save it:
+        sudo firewall-cmd --runtime-to-permanent
+
+    - Can now ssh onto the board (board has a SSH server running by default)
+        # Default password is temppwd
+        ssh debian@192.168.6.1
+
+    - Running ping 8.8.8.8 can result in a connect: Network is unreachable error. This is because
+      the board doesn't know where to route its traffic; we need to configure it to route all
+      traffic to the desktop
+
+        sudo -i
+        # This will add it permanently so survives reboots
+        route add default gw 192.168.6.1
+        
+    - Can configure it to resolve domain names as well:
+
+        echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+
+    - I setup SSH to use public/private keys:
+        - generate keys with ssh-keygen:
+
+          # -m PEM uses PEM public key format for key generation
+          ssh-keygen -m PEM -t rsa -b 4096 -C "debian@beagleblack" -f ~/.ssh/beagleblack_id_rsa -N somepassphrase
+
+        - transfer the public key to the remote host with ssh-copy-id:
+          ssh-copy-id -i ~/.ssh/beagleblack_id_rsa.pub debian@192.168.6.1
+
+        - now you can login with ssh debian@192.168.6.2 and it will prompt you for the passphrase for the private key
+          However this can be a bit cumbersome so can add the private key to the agent with
+
+          ssh-add ~/.ssh/beagleblack_id_rsa
+
+          You can then add the following entry to ~/.ssh/config file:
+
+          Host beagleblack
+            Hostname 192.168.6.2
+            User debian
+            Identityfile ~/.ssh/beagleblack_id_rsa
+
+          then can simply login with ssh debian@beagleblack
