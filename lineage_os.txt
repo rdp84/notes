@@ -1,0 +1,68 @@
+Lineage OS
+----------
+For my OnePlus One I need an OS. Lineage OS offers reasonable support, currently
+Lineage 18.1 is running Android 11. There are Lineage 19 and 20 which run Andro-
+id 12 and 13 but unfortunately those version don't support the One.
+
+Requirements
+------------
+    - on the PC need adb and fastboot utilities. Instructions:
+      https://wiki.lineageos.org/adb_fastboot_guide#on-linux
+    - on the phone need to enable Android Debugging so you can use adb. Instructions:
+      https://wiki.lineageos.org/adb_fastboot_guide#setting-up-adb
+    - connect phone to PC via USB and run `adb devices`. A dialog should appear
+      on the phone asking you to allow USB debugging. Check `Always Allow` and choose `OK`
+
+Unlock the bootloader
+---------------------
+Unlocking the bootloader allows you to flash new images to the partitions.
+    - connect device to PC via USB
+    - can run `adb reboot bootloader` or with device powered off hold `Volume Up + Power`
+    - once in fastboot mode, verify PC finds it with `sudo fastboot devices`. Then unlock
+      the bootloader `sudo fastboot oem unlock`
+    - this should reboot the device but if not reboot it via the power button. It will then
+      boot back into the current OS but it will now be unlocked
+    - will need to re-enable USB debugging once it has booted up, see above on how to do this
+
+Install custom recovery
+-----------------------
+A custom recovery is a thrid-party recovery environment, replacing the stock recovery
+environment. Once booted into the recovery environment, a menu is provided which allows
+you to recover a device by being able to install the OS. To boot into recovery you use
+a combination of buttons on the device; for a OnePlus One this is `Volume Down + Power`
+    - download the Lineage recovery image for the OnePlus One onto PC
+      https://download.lineageos.org/devices/bacon/builds
+    - get the phone into fastboot mode (see above)
+    - flash recovery image onto device `sudo fastboot flash recovery path_to_recovery.img`
+      this command can take a bit of time ~15 mins. It doesn't provide any progress
+      but stay patient and it will complete
+    - once complete long-press `Volume Down + Power` until the phone reboots
+
+Install Lineage OS from recovery
+--------------------------------
+    - download the Lineage OS image (.zip file) for the OnePlus One onto PC
+      https://download.lineageos.org/devices/bacon/builds
+    - when booted into recovery (see above) tap `Factory Reset` then `Format data/factory reset`
+    - return to main menu and sideload Lineage OS .zip package:
+        - on device select `Apply Update`, then `Apply from ADB` to begin sideload
+        - on PC sideload package with `adb sideload path_to_lineage_os.zip`
+    - in the past, this process succeeds even if the progress stops at 47% and it reports
+      adb: failed to read command: Success.
+    - I like to install add-ons such as Google Apps. This needs to be done before booting into
+      Lineage OS for the first time. See below on how to do this.
+
+Install Google Apps
+-------------------
+    - mindthegapps aren’t signed with Lineage OS’s official key, and therefore when they are sideloaded,
+      Lineage Recovery will present a screen that says Signature verification failed.
+      This is expected, click Continue.
+    - Download latest version https://mindthegapps.com/download/
+      I want Android 11 and Arm (not Arm64)
+    - on phone return to main menu and sideload the apps .zip package with
+        - select `Apply Update` then `Apply from ADB` to begin sideload
+        - on PC sideload package with `adb sideload path_to_apps.zip`
+
+Reboot
+------
+    - once everything is installed, click the back arrow in the top-left of the screen
+      and then `Reboot system now`
