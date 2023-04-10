@@ -1,0 +1,59 @@
+GNU Hello
+---------
+The GNU Hello program produces a familiar, friendly greeting. It is another implementation
+of the classic program that prints “Hello, world!” when you run it. However it is written
+in C and is a useful; learning resource for building software.
+
+Download
+--------
+    - stable sources can be found at
+      https://ftp.gnu.org/gnu/hello/
+    - it is better to use a mirror though since you can find one which is geographically
+      closer. For UK, have the University of Kent mirror service:
+      https://www.mirrorservice.org/sites/ftp.gnu.org/gnu/hello/
+    - could download via a browser but I fancied using ftp so:
+
+      # connect to ftp mirror
+      ftp mirrorservice.org
+
+      # login anonymously with username `anonymous`. Don't need a password
+      # then use ls, cd to look around. For help, use `?` or for a specifc command
+      # `? get`
+      cd /sites/ftp.gnu.org/gnu/hello
+      get hello-2.12.1.tar.gz ~/Computing/Software/Hello/GNU/hello-2.12.1.tar.gz
+
+    - remember the firewall in Fedora so need to add the service
+      sudo firewall-cmd --zone=FedoraWorkstation --add-service=ftp
+
+    - extract with `tar -xvf hello-2.12.1.tar.gz`
+
+Installation
+------------
+    - INSTALL file gives details on how to do the install but roughly goes:
+
+      # configure the package for the system (will check we have everything it needs)
+      ./configure
+
+      # compile
+      make
+
+      # install. By default will install to /usr/local/bin/, /usr/local/share/man etc which
+      # is owned by root so need elevated privileges
+      sudo make install
+
+      # remove program binaries and object files from source code directory
+      make clean
+    
+      # remove installed files, will need elevated privileges
+      sudo make uninstall
+
+    - In Fedora most things go under /usr/bin, /usr/share/man etc. To do this can set
+      --prefix=PREFIX in configure, so:
+      ./configure --prefix=/usr/
+
+Running
+-------
+    - should be able to just do
+      hello
+    - to see the manual
+      man hello
