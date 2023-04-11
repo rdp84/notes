@@ -1,0 +1,51 @@
+RPM & DNF
+---------
+    - I fancided having a go at creating my own rpm and using DNF since I use
+      it extensively and don't really know what is happening
+    - the following is a good guide on packaging:
+      https://docs.fedoraproject.org/en-US/package-maintainers/Packaging_Tutorial_GNU_Hello/
+    - I followed the above but then an into a problem when I ran the linting stage,
+      it reported the following to me:
+      hello.src: W: strange-permission hello.spec 600
+
+    - On running rpmquery --query --list --dump hello-2.10-1.fc37.src.rpm
+      you see:
+      hello.spec 1374 1681195876 8f31b5c01a92645d4a2fca268e6950e106e02e8fd20b6965b321f02957a09012 0100600 bobby bobby 0 0 0 X
+
+      so you can see the spec file does indeed have strange permissions. Really it should be 0644
+
+    - The guide linked to above uses fedpkg and mockbuild which didn't give many clues as to stop
+      it from happening
+    - I looked into using rpmbuild instead, The following explains it well:
+      https://www.redhat.com/sysadmin/create-rpm-package         
+
+      # Build the source RPM
+      rpmbuild -bs SPECS/hello.spec
+
+      # Build the binary RPM
+      rpmbuild -bb SPECS/hello.spec
+
+      # List files in a RPM
+      rpmquery --list --package RPMS/x86_64/hello-2.10-1.fc37.x86_64.rpm
+
+      # Get further details
+      rpmquery --list --package --dump RPMS/x86_64/hello-2.10-1.fc37.x86_64.rpm
+
+      # List package's runtime dependencies
+      rpm --query --package --requires RPMS/x86_64/hello-2.10-1.fc37.x86_64.rpm
+
+      # To check which packages in Fedora repositories provide these dependencies
+      dnf -C repoquery --whatprovides 'libc.so.6()(64bit)'
+
+      # To check what capailities a package provides
+      rpm --query --package --provides RPMS/x86_64/hello-2.10-1.fc37.x86_64.rpm
+
+      # Installing
+      sudo dnf -C -y install ./RPMS/x86_64/hello-2.10-1.fc37.x86_64.rpm
+
+      # View information once installed
+      dnf --info --installed hello
+
+      # Remove
+      sudo dnf remove hello
+
