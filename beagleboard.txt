@@ -100,3 +100,13 @@ Communicating with the Board
             Identityfile ~/.ssh/beagleblack_id_rsa
 
           then can simply login with ssh debian@beagleblack
+
+    - As a last resort it is possible to use a serial connection with the USB-to-TTL 3.3V
+        - plug in the cable to the six-pin connector beside the P9 header, black lead to the white dot and USB to
+          desktop
+        - on desktop use screen to connect
+
+          sudo screen /dev/ttyUSB0/ 115200
+
+        - this should load the login prompt. I've had better success when connecting up and then powering off/on
+          the board. When doing this you see full console output from the boot process.
