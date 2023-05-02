@@ -1,12 +1,106 @@
 
+Discovering
+-----------
+    - plugin USB, can see which device file it is by looking at dmesg. It will be something like /dev/sdd. This represents the whole
+      disk. If it is partitioned then you'll see /dev/sdd1 which is the first partition on the disk
+
+fdisk
+-----
+    - fdisk allows you to manipulate partitions of a disk:
+      sudo fdisk /dev/sdd
+
+      need to use sudo since /dev/sdd are owned by root
+
+    - has a good menu, accessed by typing m:
+
+      p - print partition table
+      i - get further information on partition
+      F - list free space on unpartitioned space left on device
+      d - delete a partition
+      n - create a new partition
+      t - change the type of partition (this doesn't format the partition with the filesystem, just flags as to what filesystem will be installed on it)
+        - use 'L' to see a full liting of available types
+      a - toggle whether the partion is a boot partition
+      w - write out changes and exit. This is important to save changes made since fdisk doesn't make them immediately.
+
+Formatting
+----------
+    - to format a partition use mkfs family of commands:
+
+      sudo mkfs.ext4 /dev/sdd1
+
+Partition identifiers
+---------------------
+    - partitions have identifiers such as a uuid, label etc. These seem to be used when plugging a USB stick in automount kicks in
+      on Fedora.
+    - when creating SD card image for Beaglebone Black, the image has one ext4 partition with a label of rootfs. When plugged in
+      it gets automounted to /run/media/bobby/rootfs
+    - it is posible to check the label of a partition with
+
+      sudo e2label /dev/sdd1
+
+    - to then change it use
+
+      sudo e2label /dev/sdd1 my_rootfs_label
+
+fstab
+-----
+    - with knowing identifiers it is now possible to add entries into the filesystem table (fstab)
+    - introduction to it
+
+      https://www.redhat.com/sysadmin/etc-fstab
+
+    - examples
+
+    # mount partition identified by label DISGO onto the path, with type vfat. vfat takes some specific
+    # mount options so we can apply masks to get the permissions we want. user means ordinary user
+    # can mount, noauto means we don't try and mount it at boot
+    LABEL=DISGO /home/bobby/Computing/Mount/disgo vfat user,noauto,rw,nosuid,nodev,relatime,uid=1000,gid=1000,fmask=0133,dmask=0022,codepage=437,iocharset=ascii,shortname=mixed,showexec,utf8,flush,errors=remount-ro	1 2
+
+    # to then mount use mount /home/bobby/Computing/Mount/disgo
+
+    # ext4 this time
+    LABEL=disgo /home/bobby/Computing/Mount/disgo ext4 user,noauto,rw,nosuid,nodev	1 2
+
+Loop devices
+------------
+    - if you have an iso or img file but no device then you can use the loop-device
+    - man page for mount has a section on it, just search for loop
+    - as an example
+
+     sudo mount -t ext4 -o loop=/dev/loop0,offset=$((8192 * 512)) bone-debian-10.3-iot-armhf-2020-04-06-4gb.img sdcard/
+    the offset is where the ext4 partition is. You can find this out by looking at the partition table with
+    fdisk, passing in the path to the img file. Can also use the file command to try and find more
+
+    - losetup is the command used to setup and control loop devices. Examples given in man page for it
+
+dd
+--
+    - useful command for working with bytes
+    - a good example would be when creating a SD card with a bootable image. Rather than using a GUI, could
+      just use something like
+
+      sudo dd if=bone-debian-10.3-iot-armhf-2020-04-06-4gb.img of=/dev/sdd
+
+      here the outfile is /dev/sdd which is the full disk and so the img file overwrites what was on the disk.
+      Since it has copied the bytes across though, the disk will now have the partition table from the img file
+      and so there is no need to partition the disk and format it.
+
+    - can take its input from stdin so you could just pipe it in:
+
+      sudo xzcat bone-debian-10.3-iot-armhf-2020-04-06-4gb.img.xz | sudo dd of=/dev/sdd
+
+    - see manual page for more dd options such as setting a block size with which to read/write bytes
+
+Addendum
+--------
+Some random stuff, not sure if any of it is useful:
+
 lvs - display information about logical volumes
 pvs - display information about physical volumes
 vgs - display information about volume groups
-fdisk -l - displays information on partition table entries
 
 df -h - gets file system disk space usage
-
-umount -v /home - unmounts home with verbose output
 
 e2fsck -ff /dev/fedora/home - forces filesyetem check (this might be /dev/mapper/fedora-home) 
 
@@ -41,25 +135,3 @@ parted - starts a command interface
 p - print current state of partitions
 resizepart - resize a partition, i.e., shrink it to desired size
 mkpart - make a partition
-
-once you have made a partition then need to make the filesystem on that partition with the command:
-mkfs.* - diferent appendix on command depending on what filesystem wish to create. Use tab completion to see a load.
-
-fdisk /dev/sdb - manipulate partition table of disk /dev/sdb. When pluggin in USB thumb drive run dmesg to see where it is loaded
-
-fdisk starts an interface. Run 'm' to see a full list of commands. Some useful ones:
-
-F - list free space on unpartitioned space left on device
-d - delete a partition
-n - create a new partition
-t - change the type of partition (this doesn't format the partition with the filesystem, just flags as to what filesystem will be installed on it)
-  - use 'L' to see a full liting of available types
-a - toggle whether the partion is a boot partition
-w - write out changes and exit. This is important to save changes made since fdisk doesn't make them immediately.
-
-Once partitions have been setup need to format it. Use mkfs... commands to do this:
-
-mkfs.fat -F 32 /dev/sdb1 (/dev/sdb1 is the partition)
-sudo mkfs.ext4 /dev/sdb2
-
-Can also possibly use parted to do similar things. Unsure as to whether you can resize a partition with fdisk...
