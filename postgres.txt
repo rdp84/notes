@@ -1,0 +1,85 @@
+Installing
+----------
+    - obviously can install Postgres via a package manager but decided to install from source.
+    - reasonably simple, the INSTALL file in the source provides useful instructions. The only thing
+      ./configure reported was it needed readline, which I installed with dnf install readline
+    - things were installed to /usr/local/pgsql. There is a bin directory here which I subsequently
+      added to my PATH in .bash_profile to make commands less cumbersome to run.
+
+Starting
+--------
+    - The install file contains a Getting Started section, which recommends setting up a postgres
+      user for the server. Chapter 19 in the main documentation also talks about why to do this.
+      Therefore I have done this.
+    - I created a database cluster under /usr/local/pgsql/data which is owned by postgres
+    - to the start this you need to switch to the postgres account and then start the server
+
+      # switch to postgres
+      sudo su - postgres
+
+      # start the server
+      /usr/local/pgsql/bin/pg_ctl -D /usr/local/pgsql/data start
+
+    - I added PGDATA=/usr/local/pgsql/data and PATH=$PATH:/usr/local/pgsql/bin to the postgres
+      bash_profile so this can be shortened to be
+
+      pg_ctl start
+
+Roles
+-----
+    - Postgres manages database access permissions using the concept of roles. These can be thought
+      as a database user or group of database users. The main documentation has a chapter on it, 22,
+      which explains things well.
+    - When first setup I needed to create a role so I can login to the server and create databases.
+      It is recommended to name the role the same as the OS user as by default the client tools
+      will try and connect with the name of the role set to the user who is running it.
+    - the postgres user is able to create roles so
+
+      sudo su - postgres
+
+      # start the interactive terminal
+      psql
+
+      # create a role named bobby and give attribute LOGIN (means they can login) 
+      CREATE ROLE bobby LOGIN;
+
+      # add attribute CREATEDB (means they can create databases) to the bobby role
+      ALTER ROLE bobby WITH CREATEDB;
+
+      # list current roles, either of:
+      \du
+      SELECT rolname FROM pg_roles;
+
+    
+   - I did play around with role memberships but seemed a bit odd because any member could
+     delete a database. But this is what I did
+
+     # have students as our group role
+     CREATE ROLE students CREATEDB NOINHERIT;
+
+     # create a couple of roles
+     CREATE ROLE bobby LOGIN INHERIT;
+     CREATE ROLE david LOGIN INHERIT;
+
+     # Now add roles into the group
+     GRANT students TO bobby;
+     GRANT students TO david;
+
+     # Can remove from a role from a group
+     REVOKE students FROM david
+
+     # now when I login as bobby, the CREATEDB role is never inherited so I first need
+     # to SET ROLE to a role having this attribute, in this case students:
+     SET ROLE students;
+     CREATE DATABASE mydb;
+
+   - to remove a role:
+     DROP ROLE david;
+
+   - you might get an error doing this because a database somewhere might be owned by the role.
+     Recipe for doing this:
+
+     REASSIGN OWNED BY doomed_role TO successor_role;
+     DROP OWNED BY doomed_role;
+     # repeat the above commands in each database of the cluster
+     DROP ROLE doomed_role;
