@@ -25,6 +25,9 @@ Starting
 
       pg_ctl start
 
+    - To stop cleanly used
+
+      pg_ctl stop
 Roles
 -----
     - Postgres manages database access permissions using the concept of roles. These can be thought
@@ -50,7 +53,6 @@ Roles
       \du
       SELECT rolname FROM pg_roles;
 
-    
    - I did play around with role memberships but seemed a bit odd because any member could
      delete a database. But this is what I did
 
@@ -83,3 +85,44 @@ Roles
      DROP OWNED BY doomed_role;
      # repeat the above commands in each database of the cluster
      DROP ROLE doomed_role;
+
+Usage
+-----
+    - There is a bobby role and at the moment a mydb database so from that account can use
+
+      pgsql mydb
+
+    - the docs are good to follow. The source also contains the tutorials as .sql files. To
+      generate the .sql files need to cd to the tutorial directory and then run make. Then
+      you can start psql in step mode and load the file
+
+      psql -s mydb
+      \i basics.sql
+
+      you will then be asked to confirm to run a statement so can step through the file as it
+      is being executed
+
+Storage
+-------
+    - Interested in knowing how data is actually stored. The docs have a chapter on it, Chapter
+      73, Database Phyical Storage
+    - All files are stored in
+
+      /usr/local/pgsql/data/base
+
+    - This directory contains numbered directories which relates to the Object Id (OID) of the database.
+      Can query for this from the catalog pg_database
+
+      SELECT oid, datname FROM pg_database
+
+    - Find the OID you are interested in and then cd into it. This will contain a number of different
+      files, again identified by their OID. To find the OID of a relation you are interested in
+      query the pg_class catalog
+
+      SELECT oid, relname FROM pg_class WHERE relname = 'weather';
+
+    - Use the OID to then run a hexdump of the file. From the docs and the source you can then
+      see how things are stored
+
+      hexdump -n 24 -C 25078
+      hexdump -s 8088 -n 48 -C 25078
