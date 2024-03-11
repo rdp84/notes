@@ -1,0 +1,83 @@
+Docker
+------
+
+Image:
+    - Have a Dockerfile to describe the image
+    - Then run the docker build command which is usually pretty simple
+
+      docker build -t checkout-playwright:latest --file Dockerfile .
+
+      options:
+      -t, short for tag and provides a way of remembering what the image relatess to
+      --file, name of the Dockerfile to build from. By default will use Dockerfile so this can be left out
+      ., where to look for the Dockerfile to build from. In this example I have given the current directory.
+
+      docker build -t pam-checkout:master --build-arg APP=checkout -f app.Dockerfile --target base .
+
+      options:
+      --build-arg, Dockerfiles can take arguments. In this case it takes an argument called APP which we set to checkout
+      --target, you can have multi-stage Dockerfiles which helps to build an image efficiently. In this case passing base
+                builds the base stage.
+
+Container:
+    - Once you have an image, can run the application in a container. To do this use the docker run command
+
+      docker run --rm -e APP_URL=http://example.com -e COMMIT_TAG=sha256 checkout-playwright:latest
+
+      options:
+      --rm, automatically removes the container when it exits
+      -e, set environment variable in the container, in this case APP_URL=https://example.com
+
+
+    - another useful option not shown above is the volume option. This is specified with the -v flag:
+
+      docker run --rm -e APP_URL=$APP_URL -v $(pwd)/playwright/test-results:/app/test-results $DOCKER_IMAGE_NAME
+
+      -v $(pwd)/playwright/test-results:/app/test-results,
+      consists of three fields, separated by the colon
+      first field is the name of the volume (on the host machine)
+      second field is the path where the file or directory is mounted in the container
+      third field is optional, comma separated list of options such as readonly (ro)
+
+    - sometimes you might not want to run the application in the container when it starts and instead intercept it,
+      running a different application:
+
+      docker run --rm -i -t playwright-checkout:latest /bin/bash
+
+      -i, interactive, keeps STDIN open even if not attached
+      -t, allocate a pseudo-TTY
+      /bin/bash, application to run. Note that not all images will have this installed, depending on base images
+      and what they have installed
+
+      so in the above case we end up with bash
+
+Disk Space:
+     - Docker images can take up quite a lot of disk space; it takes a conservative approach to cleaning up
+       unused objects such as images, containers, volumes and networks.
+
+     - To view all images, including intermediate images:
+       docker images -a
+
+       To remove:
+       docker image rm IMAGE_ID
+
+       when removing you need to make sure the image is not being referenced by a container. To see what
+       containers you have:
+
+       docker container ls -a
+
+       this will show you which image a container is referencing
+
+     - A dangling image is one that is not tagged and is not referenced by any container. To remove all
+       of these can run
+
+       docker image prune
+
+       this will prompt you to confirm this action. Can pass -f if you don't want to be prompted.
+
+     - When you stop a container it is not automatically removed, unless you pass the --rm option. A stopped
+       container's writable layers will take up disk space so to clean this up can use the prune command:
+
+       docker container prune
+
+       again this will prompt you, can bypass with -f option
