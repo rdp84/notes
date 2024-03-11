@@ -1,11 +1,17 @@
 Bash scripting
 --------------
 
+Shebang
+-------
+
 Best practice to declare on first line of script which interpreter to use. Generally I use bash so we provide the
 path to the bash binary, preceded by the shebang character
 sequence (#!) like so:
 
     #!/bin/bash
+
+Variables
+---------
 
 To declare a variable simply provide an identifier
 followed by the equals character:
@@ -19,9 +25,15 @@ prefixed with the dollar character:
     echo "my_variable=$my_variable"
     echo "another_variable=$another_variable"
 
+Comments
+--------
+
 Use the hash character to add a comment:
 
     # It is always worth commenting things for later use
+
+Exit Status
+-----------
 
 You can save the output of a command into a variable with
 something like:
@@ -45,6 +57,9 @@ command then it is best to save it in another variable:
     # prints 2 since that is what ls exited with
     echo "ls_exit_status=$ls_exit_status"
 
+Command Separator
+-----------------
+
 The semi-colon can be used as a command separator - it is
 basically like pressing the ENTER key to execute a
 command:
@@ -53,8 +68,11 @@ command:
     # It has all been written on the one line though
     ls -a; ls -l
 
-This becomes useful when we want to write if-else
-statements:
+test command
+------------
+
+The command separator becomes useful when we want to use the test
+command and write conditionals:
 
     grep -irs '^bob\+y' /etc
     GREP_EXIT_STATUS=$?
@@ -82,6 +100,9 @@ Important things to remember from above:
     Making use of `;` means we can write statements on
     the one line
 
+Extended test command
+---------------------
+
 The [[ ]] construct is the more versatile Bash version of
 [ ]. It is known as the extended test command and using
 it can prevent many logic errors in scripts. It is
@@ -106,3 +127,39 @@ give an error if used in the [ ] construct.
     else
         echo "grep returned: $GREP_EXIT_STATUS"
     fi
+
+for loop
+--------
+
+Basic syntax of a for loop is
+
+      for <variable name> in <a list of items>;do <some command> $<variable name>;done;
+
+In the following example take the output of the git branch command as our list of items:
+
+   for branch in $(git branch); do if [ $branch = 'master' ]; then echo "found master"; else echo "found something else"; fi; done
+
+
+Functions
+---------
+
+Basic syntax of a function is
+
+    function myFunc() {
+        echo "hello, world"
+        return 55
+    }
+
+Can use the command separator to shorten this to be
+
+    function myFunc() { echo "hello, world"; return 55; }
+
+To pass arguments to a function put them straight after the name, separated by a space.
+The passed parameters are then $1, $2, $3 ... $n
+The $# variable holds the number of arguments
+The $* and $@ variables hold all positional parameters passed to the function.
+    "$*" expands to "$1 $2 $n"
+    "$@" expands to "$1" "$2" "$n"
+
+    function greeting() { echo "a message from greeting"; echo "your name is $1"; }
+    |> greeting bobby
