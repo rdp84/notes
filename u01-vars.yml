@@ -1,0 +1,4 @@
+env_vars: |
+  NODE_TLS_REJECT_UNAUTHORIZED=0
+  ACCOUNT_ENV=u01
+SQUAD: Piri Piri
