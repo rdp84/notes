@@ -1,0 +1,38 @@
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+	. /etc/bashrc
+fi
+
+# User specific environment
+
+# Used to store user-specific executable files and other data
+if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]
+then
+    PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+fi
+
+# Load nvm
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# Load nvm bash_completion
+[ -s "$NVM_DIR/bash_completion" ] &&
+    \. "$NVM_DIR/bash_completion"
+
+# Android Debug Tools
+ADB_DIR="$HOME/Computing/Software/Android/adb-fastboot/platform-tools/"
+if [ -d $ADB_DIR ]; then
+    PATH="$PATH:$ADB_DIR"
+fi
+
+# Postgres
+PATH="$PATH:/usr/local/pgsql/bin"
+
+# k6
+PATH="$PATH:/home/bobby/Computing/Programming/TS/k6-testing/k6-v2.0.0-linux-amd64"
+
+# Export
+export PATH
+
