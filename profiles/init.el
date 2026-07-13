@@ -97,9 +97,6 @@
 
 ;; Explicit auto-mode-alist entries for tree-sitter modes
 ;; (belt and braces approach as remap-alist alone isn't always reliable)
-(add-to-list 'auto-mode-alist '("\\.ts\\'"    . typescript-ts-mode))
-(add-to-list 'auto-mode-alist '("\\.js\\'"    . js-ts-mode))
-(add-to-list 'auto-mode-alist '("\\.py\\'"    . python-ts-mode))
 (add-to-list 'auto-mode-alist '("\\.c\\'"     . c-ts-mode))
 (add-to-list 'auto-mode-alist '("\\.h\\'"     . c-ts-mode))
 (add-to-list 'auto-mode-alist '("\\.cpp\\'"   . c++-ts-mode))
@@ -108,6 +105,11 @@
 (add-to-list 'auto-mode-alist '("\\.hpp\\'"   . c++-ts-mode))
 (add-to-list 'auto-mode-alist '("\\.hh\\'"    . c++-ts-mode))
 (add-to-list 'auto-mode-alist '("\\.java\\'"  . java-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.js\\'"    . js-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.py\\'"    . python-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.jsx\\'"   . tsx-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.tsx\\'"   . tsx-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.ts\\'"    . typescript-ts-mode))
 (add-to-list 'auto-mode-alist '("\\.ya?ml\\'" . yaml-ts-mode))
 
 ;;; ──────────────────────────────────────────────
